@@ -1,6 +1,6 @@
 services:
   postgres:
-    container_name: postgres_container
+    container_name: postgres
     image: postgres
     environment:
       POSTGRES_USER: postgres
@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
 
   pgadmin:
-    container_name: pgadmin_container
+    container_name: pgadmin
     image: dpage/pgadmin4
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
@@ -29,14 +29,96 @@ services:
       - postgres
     restart: unless-stopped
 
+  config-server:
+    image: kumarrohit26/config-server-ms:latest
+    container_name: config-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - servicereg
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  servicereg:
+    image: kumarrohit26/servicereg:latest
+    container_name: servicereg
+    ports:
+      - "8761:8761"
+    depends_on:
+      - rabbitmq
+      - zipkin
+      - postgres
+      - pgadmin
+    networks:
+      - microservice-network
+      - postgres
+
+  companyms:
+    image: kumarrohit26/companyms:latest
+    container_name: company
+    ports:
+      - "8083:8083"
+    depends_on:
+      - servicereg
+      - config-server
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  jobms:
+    image: kumarrohit26/jobms:latest
+    container_name: job
+    ports:
+      - "8082:8082"
+    depends_on:
+      - servicereg
+      - config-server
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://servicereg:8761/eureka/
+
+  reviewms:
+    image: kumarrohit26/reviewms:latest
+    container_name: review
+    ports:
+      - "8084:8084"
+    depends_on:
+      - servicereg
+      - config-server
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  gateway-ms:
+    image: kumarrohit26/gateway-ms:latest
+    ports:
+      - "8085:8085"
+    depends_on:
+      - servicereg
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
   zipkin:
-    container_name: zipkin_container
+    container_name: zipkin
     image: openzipkin/zipkin
     ports:
       - "9411:9411"
     networks:
       - postgres
-  
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -47,6 +129,8 @@ services:
       - postgres
 
 networks:
+  microservice-network:
+    driver: bridge
   postgres:
     driver: bridge
 
