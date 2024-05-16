@@ -54,40 +54,46 @@ This project utilizes several tools and technologies to enhance the functionalit
 - **Distributed Tracing:** Using Zipkin and Micrometer for tracing and monitoring requests across microservices.
 - **OpenFeign:** For declarative REST client to simplify HTTP communication between microservices.
 - **Fault Tolerance and Circuit Breaker:** Implemented using Resilience4j to handle failures gracefully and ensure system resilience.
+- **Kubernetes:** Used for container orchestration and deployment.
 
-## Getting Started
+## Running the Application
 
-To use this repository, please follow these steps:
+There are three ways to run the Job Portal application:
+
+### I. Start Services on Docker and Microservices from IntelliJ (Development Purpose)
+
+For development purposes, you can start the PostgreSQL, RabbitMQ, and Zipkin server on Docker containers, and run other microservices from IntelliJ:
+
+To get the codebase:
 
 1. Download all the microservices using the `download.sh` file.
 2. Open each project in IntelliJ as a Maven project.
-3. You might need to set some `.env` files in some microservices; details of which are mentioned in the respective repository.
-
-To bring up the Docker instances for PostgreSQL, pgAdmin, and Zipkin, run the following command from the directory where the `docker-compose.yml` file is present:
+3. Ensure Docker is installed and running on your machine.
+4. Navigate to the directory containing the `docker-compose.yaml` file.
+5. Bring up the Docker instances for PostgreSQL, pgAdmin, and Zipkin.
 
 ```sh
-docker compose up -d
+docker compose up -d postgres rabbitmq zipkin
 ```
 
 The following Docker containers are used in this project:
 
 | Service   | Container Name     | Image                | Host Port | Container Port |
 |-----------|---------------------|----------------------|-----------|----------------|
-| Postgres  | postgres_container  | postgres             | 5000      | 5432           |
-| pgAdmin   | pgadmin_container   | dpage/pgadmin4       | 5050      | 80             |
-| Zipkin    | zipkin_container    | openzipkin/zipkin    | 9411      | 9411           |
+| Postgres  | postgres  | postgres             | 5000      | 5432           |
+| pgAdmin   | pgadmin   | dpage/pgadmin4       | 5050      | 80             |
+| Zipkin    | zipkin    | openzipkin/zipkin    | 9411      | 9411           |
 
-## Running the Application
-Run the applications in the following order:
+Run the applications in the following order in IntelliJ:
 
-|Service Name	|Port	|Gateway URL|
-|---------------|-------|-----------|
-|Service Registry|	8761|	http://localhost:8085/eureka/main|
-Config Server	|8080	|N/A|
-API Gateway	|8085	|N/A|
-Job Microservice	|8082	|http://localhost:8085/jobs|
-Company Microservice	|8083	|http://localhost:8085/companies|
-Review Microservice	|8084	|http://localhost:8085/reviews|
+|Order |Service Name	|Port	|Gateway URL|
+|---|---------------|-------|-----------|
+|1.|Service Registry|	8761|	http://localhost:8085/eureka/main|
+|2.|Config Server	|8080	|N/A|
+|3.|API Gateway	|8085	|N/A|
+|4.|Job Microservice	|8082	|http://localhost:8085/jobs|
+|5.|Company Microservice	|8083	|http://localhost:8085/companies|
+|6.|Review Microservice	|8084	|http://localhost:8085/reviews|
 
 - **Service Registry:** Accessible on localhost:8761 or via the API Gateway.
 - **Config Server:** Accessible on localhost:8080.
@@ -95,3 +101,65 @@ Review Microservice	|8084	|http://localhost:8085/reviews|
 - **Job Microservice:** Accessible on localhost:8082 or via the API Gateway at /jobs.
 - **Company Microservice:** Accessible on localhost:8083 or via the API Gateway at /companies.
 - **Review Microservice:** Accessible on localhost:8084 or via the API Gateway at /reviews.
+
+### II. Using Docker for All Services
+
+You can run all the services using Docker. This involves using Spring Boot's automatic Docker image creation and pushing the images to your server.
+
+1. Ensure Docker is installed and running on your machine.
+
+2. Create Docker image for each microservice
+```
+./mvnw spring-boot:build-image "-Dspring-boot.build-image.imageName=<username>/<service-name>"
+```
+
+3. Push the image to docker hub
+```
+docker push <username>/<service-name>
+```
+Run the above command for all the services. Please use below service names or if you are using different names please update it in `docker-compose.yaml` file.
+
+- servicereg
+- config-server-ms
+- gateway-ms
+- jobms
+- companyms
+- reviewms
+
+4. Navigate to the directory containing the docker-compose.yaml file.
+5. Start all the services:
+```
+docker compose up -d
+```
+### III. Using Kubernetes
+
+You can also deploy the application using Kubernetes. For this, you need to install Minikube and use the Kubernetes configuration files to start all services.
+
+1. Install minikube from [here](https://minikube.sigs.k8s.io/docs/start/)
+2. Start Minikube
+```
+minikube start --driver=docker
+```
+3. Open minikube dashboard to see the details
+```
+minikube dashboard
+```
+4. Apply the kubernetes configuration files to start each services.
+```
+kubectl apply -f service/postgres
+kubectl apply -f service/rabbitmq
+kubectl apply -f service/zipkin
+
+kubectl apply -f bootstrap/job
+kubectl apply -f bootstrap/company
+kubectl apply -f bootstrap/review
+```
+5. Run the command to get url for each service to start using
+```
+minikube service <service-name> --url
+
+For example
+
+minikube service job --url
+```
+
