@@ -1,5 +1,18 @@
 # Job Portal using Spring Boot
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Microservices](#microservices)
+- [Architecture](#architecture)
+- [Tools & Technologies](#tools-and-technologies)
+- [Running the Application](#running-the-application)
+    - [Start Services on Docker and Microservices from IntelliJ (Development Purpose)](#i-start-services-on-docker-and-microservices-from-intellij-development-purpose)
+    - [Using Docker for All Services](#ii-using-docker-for-all-services)
+    - [Using Kubernetes](#iii-using-kubernetes)
+
+    
+
 ## Overview
 
 This project is a basic implementation of a job portal using a microservices architecture. The system consists of several microservices, each handling different aspects of the job portal, including job postings, companies, and company reviews. This README provides an overview of the entire system and links to the individual microservices repositories for more detailed information.
